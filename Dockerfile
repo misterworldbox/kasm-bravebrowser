@@ -1,33 +1,42 @@
+# Base image Ubuntu 20.04
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
-RUN apt update && apt install -y \
-    sudo curl unzip wget gnupg2 software-properties-common \
-    libasound2 libatk-bridge2.0-0 libatk1.0-0 libcups2 \
-    libdbus-1-3 libgdk-pixbuf2.0-0 libnspr4 libnss3 libx11-xcb1 \
-    libxcomposite1 libxdamage1 libxrandr2 libgbm1 libgtk-3-0 \
-    libxss1 libxtst6 x11-utils \
-    xfce4 xfce4-goodies xterm dbus-x11 \
-    supervisor
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    ca-certificates \
+    gnupg \
+    libgtk-3-0 \
+    libdbus-glib-1-2 \
+    x11vnc \
+    xvfb \
+    net-tools \
+    supervisor \
+    novnc \
+    websockify \
+    python3-websockify \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Brave Browser (Windows .exe not supported natively, install Linux version instead)
-RUN curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave.com/static-assets/keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-release.list && \
-    apt update && apt install -y brave-browser
+# Install Brave browser
+RUN curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-release.list && \
+    apt-get update && apt-get install -y brave-browser && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add KasmVNC
-COPY kasm_release.zip /opt/kasm_release.zip
-RUN unzip /opt/kasm_release.zip -d /opt/kasm && \
-    chmod +x /opt/kasm/*.sh
+# Setup noVNC and VNC server
+RUN mkdir -p /etc/supervisor/conf.d
 
-# Set up kasm user and environment
-RUN useradd -m kasm && \
-    echo "kasm ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Run kasm in supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 6901
-CMD ["/usr/bin/supervisord", "-n"]
+# Expose port for noVNC (default 6080)
+EXPOSE 6080
+
+# Create a script to start Xvfb, x11vnc and brave
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
