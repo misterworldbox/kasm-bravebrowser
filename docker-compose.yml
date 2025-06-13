@@ -1,10 +1,7 @@
-version: '3.8'
-
+version: "3.9"
 services:
-  brave-kasm:
+  brave-novnc:
     build: .
     ports:
-      - "6901:6901"
-    volumes:
-      - ./kasm_release.zip:/opt/kasm_release.zip
-    restart: unless-stopped
+      - "6080:6080" # akses noVNC di browser
+    shm_size: "2gb"  # supaya Brave tidak crash
