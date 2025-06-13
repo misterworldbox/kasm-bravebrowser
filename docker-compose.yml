@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  brave-kasm:
+    build: .
+    ports:
+      - "6901:6901"
+    volumes:
+      - ./kasm_release.zip:/opt/kasm_release.zip
+    restart: unless-stopped
